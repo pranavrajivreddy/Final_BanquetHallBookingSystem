@@ -19,9 +19,20 @@ const allowedOrigins = new Set([
   "http://127.0.0.1:5173"
 ]);
 
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.add(process.env.FRONTEND_URL);
-}
+const addOriginsFromEnv = (value) => {
+  if (!value) {
+    return;
+  }
+
+  value
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+    .forEach((origin) => allowedOrigins.add(origin));
+};
+
+addOriginsFromEnv(process.env.FRONTEND_URL);
+addOriginsFromEnv(process.env.FRONTEND_URLS);
 
 app.use(cors({
   origin(origin, callback) {
