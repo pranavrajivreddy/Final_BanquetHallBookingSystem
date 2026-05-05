@@ -13,11 +13,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const distPath = path.resolve(__dirname, "../dist");
 const hasFrontendBuild = fs.existsSync(distPath);
+const normalizeOrigin = (origin = "") => origin.trim().replace(/\/+$/, "");
 
 const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173"
-]);
+].map(normalizeOrigin));
 
 const addOriginsFromEnv = (value) => {
   if (!value) {
@@ -26,7 +27,7 @@ const addOriginsFromEnv = (value) => {
 
   value
     .split(",")
-    .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean)
     .forEach((origin) => allowedOrigins.add(origin));
 };
@@ -34,14 +35,20 @@ const addOriginsFromEnv = (value) => {
 addOriginsFromEnv(process.env.FRONTEND_URL);
 addOriginsFromEnv(process.env.FRONTEND_URLS);
 
+console.log("Allowed CORS origins:", Array.from(allowedOrigins));
+
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) {
+    const normalizedOrigin = origin ? normalizeOrigin(origin) : origin;
+
+    if (!normalizedOrigin || allowedOrigins.has(normalizedOrigin)) {
       return callback(null, true);
     }
 
+    console.error("Rejected CORS origin:", origin);
     return callback(new Error("CORS not allowed"));
-  }
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 }));
 app.use(express.json());
 app.use("/api", require("./routes/authRoutes.cjs"));
