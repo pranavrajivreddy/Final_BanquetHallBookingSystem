@@ -1,57 +1,50 @@
-const mysql = require("mysql2/promise");
+const { Pool } = require("pg");
 
-const db = mysql.createPool({
-  host: process.env.DB_HOST || "127.0.0.1",
-  user: process.env.DB_USER || "banquet_user",
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME || "banquet_system",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+const pool = new Pool({
+  connectionString:
+    process.env.DATABASE_URL ||
+    "postgresql://postgres:maZ2XQAm0tTXYQy7@db.gkrsbztxnnmyfjbodxgo.supabase.co:5432/postgres"
+,
+  ssl: { rejectUnauthorized: false }
 });
 
 const ensureDatabaseSchema = async () => {
-  await db.execute(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       mobile VARCHAR(20) NOT NULL UNIQUE,
-      password VARCHAR(255) NOT NULL,
+      password TEXT NOT NULL,
       role VARCHAR(20) NOT NULL DEFAULT 'customer'
     )
   `);
 
-  await db.execute(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS bookings (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      name VARCHAR(255) NOT NULL,
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
       date DATE NOT NULL,
-      eventType VARCHAR(255) NOT NULL,
-      decoration VARCHAR(255) DEFAULT '',
-      food VARCHAR(255) DEFAULT '',
-      guests INT NOT NULL,
+      "eventType" TEXT NOT NULL,
+      decoration TEXT DEFAULT '',
+      food TEXT DEFAULT '',
+      guests INTEGER NOT NULL,
       requests TEXT,
-      status VARCHAR(20) NOT NULL DEFAULT 'Pending',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      CONSTRAINT fk_bookings_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
-        ON DELETE CASCADE
+      status TEXT NOT NULL DEFAULT 'Pending',
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  await db.execute(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS admin_requests (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
       mobile VARCHAR(20) NOT NULL UNIQUE,
-      password VARCHAR(255) NOT NULL,
-      status VARCHAR(20) NOT NULL DEFAULT 'Pending',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      password TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'Pending',
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
 };
 
-module.exports = {
-  db,
-  ensureDatabaseSchema
-};
+module.exports = pool;
+module.exports.ensureDatabaseSchema = ensureDatabaseSchema;

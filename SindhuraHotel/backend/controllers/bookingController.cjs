@@ -1,4 +1,4 @@
-const { db } = require("../db.cjs");
+const db = require("../db.cjs");
 
 const allowedStatuses = new Set(["Pending", "Approved", "Rejected"]);
 
@@ -25,10 +25,11 @@ const createBooking = async (req, res) => {
   }
 
   try {
-    const [result] = await db.execute(
+    const result = await db.query(
       `INSERT INTO bookings
-        (user_id, name, date, eventType, decoration, food, guests, requests, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+        (user_id, name, date, "eventType", decoration, food, guests, requests, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pending')
+       RETURNING id, user_id, name, date, "eventType", decoration, food, guests, requests, status`,
       [
         req.user.id,
         name.trim(),
@@ -43,51 +44,40 @@ const createBooking = async (req, res) => {
 
     return res.status(201).json({
       message: "Booking created successfully",
-      booking: {
-        id: result.insertId,
-        user_id: req.user.id,
-        name: name.trim(),
-        date,
-        eventType: eventType.trim(),
-        decoration: decoration.trim(),
-        food: food.trim(),
-        guests: Number(guests),
-        requests: requests.trim(),
-        status: "Pending"
-      }
+      booking: normalizeBooking(result.rows[0])
     });
   } catch (error) {
     console.error("Create booking error:", error);
-    return res.status(500).json({ message: "Unable to create booking" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
 const getUserBookings = async (req, res) => {
   try {
-    const [rows] = await db.execute(
-      `SELECT id, user_id, name, date, eventType, decoration, food, guests, requests, status
+    const result = await db.query(
+      `SELECT id, user_id, name, date, "eventType", decoration, food, guests, requests, status
        FROM bookings
-       WHERE user_id = ?
+       WHERE user_id = $1
        ORDER BY date DESC, id DESC`,
       [req.user.id]
     );
 
-    return res.json({ bookings: rows.map(normalizeBooking) });
+    return res.json({ bookings: result.rows.map(normalizeBooking) });
   } catch (error) {
     console.error("Fetch user bookings error:", error);
-    return res.status(500).json({ message: "Unable to fetch bookings" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
 const getAdminBookings = async (_req, res) => {
   try {
-    const [rows] = await db.execute(
+    const result = await db.query(
       `SELECT
          bookings.id,
          bookings.user_id,
          bookings.name,
          bookings.date,
-         bookings.eventType,
+         bookings."eventType",
          bookings.decoration,
          bookings.food,
          bookings.guests,
@@ -99,10 +89,10 @@ const getAdminBookings = async (_req, res) => {
        ORDER BY bookings.date DESC, bookings.id DESC`
     );
 
-    return res.json({ bookings: rows.map(normalizeBooking) });
+    return res.json({ bookings: result.rows.map(normalizeBooking) });
   } catch (error) {
     console.error("Fetch admin bookings error:", error);
-    return res.status(500).json({ message: "Unable to fetch admin bookings" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -119,19 +109,19 @@ const updateBookingStatus = async (req, res) => {
   }
 
   try {
-    const [result] = await db.execute(
-      "UPDATE bookings SET status = ? WHERE id = ?",
+    const result = await db.query(
+      "UPDATE bookings SET status = $1 WHERE id = $2",
       [status, bookingId]
     );
 
-    if (result.affectedRows === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
     return res.json({ message: "Booking status updated successfully" });
   } catch (error) {
     console.error("Update booking status error:", error);
-    return res.status(500).json({ message: "Unable to update booking status" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
