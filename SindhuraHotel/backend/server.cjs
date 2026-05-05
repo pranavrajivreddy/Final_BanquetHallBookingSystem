@@ -1,9 +1,13 @@
-require("dotenv").config();
+require("dotenv").config(); // MUST be first
 
 const express = require("express");
 const cors = require("cors");
 const db = require("./db.cjs");
 
+const DATABASE_URL = process.env.DATABASE_URL;
+const JWT_SECRET = process.env.JWT_SECRET;
+console.log("DATABASE_URL exists:", !!process.env.DATABASE_URL);
+console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
