@@ -6,10 +6,9 @@ const fs = require("fs");
 const path = require("path");
 const db = require("./db.cjs");
 
-const DATABASE_URL = process.env.DATABASE_URL;
-const JWT_SECRET = process.env.JWT_SECRET;
 console.log("DATABASE_URL exists:", !!process.env.DATABASE_URL);
 console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const distPath = path.resolve(__dirname, "../dist");
@@ -72,6 +71,10 @@ app.use((error, _req, res, _next) => {
 
 const startServer = async () => {
   try {
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is required");
+    }
+
     await db.ensureDatabaseSchema();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

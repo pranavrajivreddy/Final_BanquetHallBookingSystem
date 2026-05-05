@@ -1,10 +1,13 @@
 const { Pool } = require("pg");
 
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("DATABASE_URL is required");
+}
+
 const pool = new Pool({
-  connectionString:
-    process.env.DATABASE_URL ||
-    "postgresql://postgres:maZ2XQAm0tTXYQy7@db.gkrsbztxnnmyfjbodxgo.supabase.co:5432/postgres"
-,
+  connectionString,
   ssl: { rejectUnauthorized: false }
 });
 
