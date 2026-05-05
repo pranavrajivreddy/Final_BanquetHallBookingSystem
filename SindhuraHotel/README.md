@@ -2,7 +2,7 @@
 
 ## Local development
 
-Frontend requests use `VITE_API_BASE_URL` when it is set. If it is not set :
+Frontend requests use `VITE_API_BASE_URL` when it is set. If it is not set:
 
 - development defaults to `http://localhost:3001`
 - production defaults to same-origin requests
