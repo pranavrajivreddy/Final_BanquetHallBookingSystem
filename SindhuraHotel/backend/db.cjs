@@ -27,7 +27,7 @@ const ensureDatabaseSchema = async () => {
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       date DATE NOT NULL,
-      "eventType" TEXT NOT NULL,
+      eventtype TEXT NOT NULL,
       decoration TEXT DEFAULT '',
       food TEXT DEFAULT '',
       guests INTEGER NOT NULL,
@@ -35,6 +35,28 @@ const ensureDatabaseSchema = async () => {
       status TEXT NOT NULL DEFAULT 'Pending',
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
+  `);
+
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'bookings'
+          AND column_name = 'eventType'
+      ) AND NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'bookings'
+          AND column_name = 'eventtype'
+      ) THEN
+        EXECUTE 'ALTER TABLE bookings RENAME COLUMN "eventType" TO eventtype';
+      END IF;
+    END
+    $$;
   `);
 
   await pool.query(`

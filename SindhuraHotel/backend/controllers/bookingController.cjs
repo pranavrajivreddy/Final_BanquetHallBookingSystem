@@ -27,9 +27,9 @@ const createBooking = async (req, res) => {
   try {
     const result = await db.query(
       `INSERT INTO bookings
-        (user_id, name, date, "eventType", decoration, food, guests, requests, status)
+        (user_id, name, date, eventtype, decoration, food, guests, requests, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pending')
-       RETURNING id, user_id, name, date, "eventType", decoration, food, guests, requests, status`,
+       RETURNING id, user_id, name, date, eventtype AS "eventType", decoration, food, guests, requests, status`,
       [
         req.user.id,
         name.trim(),
@@ -55,7 +55,7 @@ const createBooking = async (req, res) => {
 const getUserBookings = async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, user_id, name, date, "eventType", decoration, food, guests, requests, status
+      `SELECT id, user_id, name, date, eventtype AS "eventType", decoration, food, guests, requests, status
        FROM bookings
        WHERE user_id = $1
        ORDER BY date DESC, id DESC`,
@@ -77,7 +77,7 @@ const getAdminBookings = async (_req, res) => {
          bookings.user_id,
          bookings.name,
          bookings.date,
-         bookings."eventType",
+         bookings.eventtype AS "eventType",
          bookings.decoration,
          bookings.food,
          bookings.guests,
